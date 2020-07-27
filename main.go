@@ -19,7 +19,7 @@ func main() {
 	createTable(sqlDb)
 
 	rethinkDb, err := r.Connect(r.ConnectOpts{
-		Address: "localhost:28015",
+		Address:  "localhost:28015",
 		Database: "fsbot",
 	})
 	if err != nil {
