@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/salmonllama/fs-db-converter/lib"
 	"strings"
+	"time"
 
 	r "gopkg.in/rethinkdb/rethinkdb-go.v6"
 
@@ -32,11 +33,34 @@ func main() {
 	}
 
 	var outfits []lib.Outfit
-	rows.All(&outfits)
-	fmt.Println(getIdFromLink(outfits[0].Link))
-	//for _, outfit := range outfits {
-	//
-	//}
+	err = rows.All(&outfits)
+	if err != nil {
+		fmt.Print(err)
+	}
+
+	var count int = 0
+	fmt.Printf("Starting with %v rows\n", len(outfits))
+	for _, outfit := range outfits {
+		if strings.Contains(outfit.Link, "i.imgur") {
+			outfit.Created = time.Now().Unix()
+			//fmt.Println(outfit.Link)
+			outfit.Id = getIdFromLink(outfit.Link)
+
+			statement, err := sqlDb.Prepare("INSERT INTO outfits (id, link, tag, submitter, created) VALUES (?, ?, ?, ?, ?)")
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			_, err = statement.Exec(outfit.Id, outfit.Link, outfit.Tag, outfit.Submitter, outfit.Created)
+			if err != nil {
+				fmt.Println(err)
+			}
+			count += 1
+		} else {
+			// Do nothing, only want to keep imgur links
+		}
+	}
+	fmt.Printf("Ended with %v rows\n", count)
 }
 
 func createTable(db *sql.DB) {
